@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { useDragLayer } from 'react-dnd';
 import { ItemTypes } from './editorConstants';
 import { BoxDragPreview } from './BoxDragPreview';
 import { snapToGrid } from '@/_helpers/appUtils';
 import { useEditorStore } from '@/_stores/editorStore';
 import { shallow } from 'zustand/shallow';
+import { ModuleContext } from '../_contexts/ModuleContext';
 
 const layerStyles = {
   position: 'fixed',
@@ -16,7 +17,16 @@ const layerStyles = {
   height: '100%',
 };
 
-function getItemStyles(delta, item, initialOffset, currentOffset, currentLayout, initialClientOffset, canvasWidth) {
+function getItemStyles(
+  delta,
+  item,
+  initialOffset,
+  currentOffset,
+  currentLayout,
+  initialClientOffset,
+  canvasWidth,
+  moduleName
+) {
   if (!initialOffset || !currentOffset) {
     return {
       display: 'none',
@@ -46,7 +56,7 @@ function getItemStyles(delta, item, initialOffset, currentOffset, currentLayout,
     y = Math.round(initialClientOffset.y - 10 + delta.y + currentOffset.y * (1 - zoomLevel) - offsetFromTopOfWindow);
   }
 
-  [x, y] = snapToGrid(canvasWidth, x, y);
+  [x, y] = snapToGrid(canvasWidth, x, y, moduleName);
 
   // commented to fix issue that caused the dragged element to be out of position with mouse pointer
   // x += realCanvasDelta;
@@ -59,6 +69,7 @@ function getItemStyles(delta, item, initialOffset, currentOffset, currentLayout,
   };
 }
 export const CustomDragLayer = ({ canvasWidth, onDragging }) => {
+  const moduleName = useContext(ModuleContext);
   const { itemType, isDragging, item, initialOffset, currentOffset, delta, initialClientOffset } = useDragLayer(
     (monitor) => ({
       item: monitor.getItem(),
@@ -106,7 +117,8 @@ export const CustomDragLayer = ({ canvasWidth, onDragging }) => {
           currentOffset,
           currentLayout,
           initialClientOffset,
-          canvasWidth
+          canvasWidth,
+          moduleName
         )}
       >
         {renderItem()}

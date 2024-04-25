@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { GoogleMap, LoadScript, Marker, Autocomplete, Polygon } from '@react-google-maps/api';
 import { resolveWidgetFieldValue } from '@/_helpers/utils';
 import { darkModeStyles } from './styles';
 import { useTranslation } from 'react-i18next';
+import { ModuleContext } from '@/_contexts/ModuleContext';
 
 export const Map = function Map({
   id,
@@ -20,6 +21,7 @@ export const Map = function Map({
   properties,
   fireEvent,
 }) {
+  const moduleName = useContext(ModuleContext);
   const center = component.definition.properties.initialLocation.value;
   const { polygonPoints = [], defaultMarkers = [] } = properties;
 
@@ -89,7 +91,7 @@ export const Map = function Map({
     const newCenter = gmap.center?.toJSON();
     setMapCenter(newCenter);
 
-    onComponentOptionsChanged(component, [
+    onComponentOptionsChanged(moduleName, component, [
       ['bounds', bounds],
       ['center', addMapUrlToJson(newCenter)],
     ]).then(() => fireEvent('onBoundsChange'));
@@ -98,7 +100,7 @@ export const Map = function Map({
   useEffect(() => {
     const resolvedCenter = resolveWidgetFieldValue(center);
     setMapCenter(resolvedCenter);
-    onComponentOptionsChanged(component, [['center', addMapUrlToJson(resolvedCenter)]]);
+    onComponentOptionsChanged(moduleName, component, [['center', addMapUrlToJson(resolvedCenter)]]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center]);
 
@@ -106,7 +108,7 @@ export const Map = function Map({
   const onLoad = useCallback(function onLoad(mapInstance) {
     setGmap(mapInstance);
     const centerJson = mapInstance.center?.toJSON();
-    onComponentOptionsChanged(component, [['center', addMapUrlToJson(centerJson)]]);
+    onComponentOptionsChanged(moduleName, component, [['center', addMapUrlToJson(centerJson)]]);
   });
 
   function handleMarkerClick(index) {

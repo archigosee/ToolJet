@@ -1,7 +1,9 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, memo, useContext } from 'react';
 import Selecto from 'react-selecto';
 import { useEditorStore, EMPTY_ARRAY } from '@/_stores/editorStore';
 import { shallow } from 'zustand/shallow';
+import { useSuperStore } from '../_stores/superStore';
+import { ModuleContext } from '../_contexts/ModuleContext';
 
 const EditorSelecto = ({ selectionRef, canvasContainerRef, setSelectedComponent, selectionDragRef }) => {
   const { setSelectionInProgress, setSelectedComponents, currentPageId, appDefinition } = useEditorStore(
@@ -19,12 +21,19 @@ const EditorSelecto = ({ selectionRef, canvasContainerRef, setSelectedComponent,
     throttleTime: 30,
     threshold: 0,
   };
+  const moduleName = useContext(ModuleContext);
 
   const onAreaSelectionStart = useCallback(
     (e) => {
-      const isMultiSelect = e.inputEvent.shiftKey || useEditorStore.getState().selectedComponents.length > 0;
+      const isMultiSelect =
+        e.inputEvent.shiftKey ||
+        useSuperStore.getState().modules[moduleName].useEditorStore.getState().selectedComponents.length > 0;
       setSelectionInProgress(true);
-      setSelectedComponents([...(isMultiSelect ? useEditorStore.getState().selectedComponents : EMPTY_ARRAY)]);
+      setSelectedComponents([
+        ...(isMultiSelect
+          ? useSuperStore.getState().modules[moduleName].useEditorStore.getState().selectedComponents
+          : EMPTY_ARRAY),
+      ]);
     },
     [setSelectionInProgress, setSelectedComponents]
   );
@@ -33,7 +42,7 @@ const EditorSelecto = ({ selectionRef, canvasContainerRef, setSelectedComponent,
     e.added.forEach((el) => {
       el.classList.add('resizer-select');
     });
-    if (useEditorStore.getState().selectionInProgress) {
+    if (useSuperStore.getState().modules[moduleName].useEditorStore.getState().selectionInProgress) {
       e.removed.forEach((el) => {
         el.classList.remove('resizer-select');
       });
@@ -71,7 +80,8 @@ const EditorSelecto = ({ selectionRef, canvasContainerRef, setSelectedComponent,
     (e) => {
       if (selectionDragRef.current) {
         e.stop();
-        useEditorStore.getState().selectionInProgress && setSelectionInProgress(false);
+        useSuperStore.getState().modules[moduleName].useEditorStore.getState().selectionInProgress &&
+          setSelectionInProgress(false);
       }
     },
     [setSelectionInProgress, selectionDragRef]
@@ -79,7 +89,8 @@ const EditorSelecto = ({ selectionRef, canvasContainerRef, setSelectedComponent,
 
   const onAreaSelectionDragEnd = () => {
     selectionDragRef.current = false;
-    useEditorStore.getState().selectionInProgress && setSelectionInProgress(false);
+    useSuperStore.getState().modules[moduleName].useEditorStore.getState().selectionInProgress &&
+      setSelectionInProgress(false);
   };
 
   return (

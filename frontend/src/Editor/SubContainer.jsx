@@ -1,5 +1,5 @@
 /* eslint-disable import/no-named-as-default */
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useContext } from 'react';
 import { useDrop } from 'react-dnd';
 import { ItemTypes } from './editorConstants';
 import { DraggableBox } from './DraggableBox';
@@ -24,6 +24,8 @@ import { diff } from 'deep-object-diff';
 // eslint-disable-next-line import/namespace
 import { useGridStore, useResizingComponentId } from '@/_stores/gridStore';
 import GhostWidget from './GhostWidget';
+import { ModuleContext } from '../_contexts/ModuleContext';
+import { useSuperStore } from '@/_stores/superStore';
 
 export const SubContainer = ({
   mode,
@@ -63,6 +65,10 @@ export const SubContainer = ({
   });
 
   const appDefinition = useEditorStore((state) => state.appDefinition, shallow);
+
+  const moduleName = useContext(ModuleContext);
+
+  // const customResolverVariable = widgetResolvables[parentComponent?.component];
 
   const currentState = useCurrentState();
   const { selectedComponents } = useEditorStore(
@@ -191,7 +197,10 @@ export const SubContainer = ({
   };
 
   useEffect(() => {
-    useGridStore.getState().actions.setSubContainerWidths(parent, containerWidth / noOfGrids);
+    useSuperStore
+      .getState()
+      .modules[moduleName].useGridStore.getState()
+      .actions.setSubContainerWidths(parent, containerWidth / noOfGrids);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerWidth]);
 
@@ -266,7 +275,8 @@ export const SubContainer = ({
             item.currentLayout,
             snapToGrid,
             zoomLevel,
-            true
+            true,
+            moduleName
           );
 
           if (parentComp === 'Listview') {
@@ -485,7 +495,7 @@ export const SubContainer = ({
                       }
                       onComponentOptionsChanged={(component, variableSet, id) => {
                         checkParent(box)
-                          ? onComponentOptionsChanged(component, variableSet)
+                          ? onComponentOptionsChanged(moduleName, component, variableSet)
                           : variableSet.map((item) => {
                               onOptionChange &&
                                 onOptionChange({

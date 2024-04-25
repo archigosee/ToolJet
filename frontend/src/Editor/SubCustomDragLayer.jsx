@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useDragLayer } from 'react-dnd';
 import { ItemTypes } from './editorConstants';
 import { BoxDragPreview } from './BoxDragPreview';
 import { snapToGrid } from '@/_helpers/appUtils';
+import { ModuleContext } from '../_contexts/ModuleContext';
 const layerStyles = {
   pointerEvents: 'none',
   zIndex: 100,
@@ -12,7 +13,17 @@ const layerStyles = {
   height: '100%',
 };
 
-function getItemStyles(delta, item, initialOffset, currentOffset, parentRef, parent, currentLayout, canvasWidth) {
+function getItemStyles(
+  delta,
+  item,
+  initialOffset,
+  currentOffset,
+  parentRef,
+  parent,
+  currentLayout,
+  canvasWidth,
+  moduleName
+) {
   if (!initialOffset || !currentOffset || !parentRef.current) {
     return {
       display: 'none',
@@ -45,7 +56,7 @@ function getItemStyles(delta, item, initialOffset, currentOffset, parentRef, par
     y = Math.round(currentOffset.y + currentOffset.y * (1 - zoomLevel) - offsetFromTopOfWindow);
   }
 
-  [x, y] = snapToGrid(canvasWidth, x, y);
+  [x, y] = snapToGrid(canvasWidth, x, y, moduleName);
 
   const transform = `translate(${x}px, ${y}px)`;
   return {
@@ -54,6 +65,7 @@ function getItemStyles(delta, item, initialOffset, currentOffset, parentRef, par
   };
 }
 export const SubCustomDragLayer = ({ parentRef, parent, currentLayout }) => {
+  const moduleName = useContext(ModuleContext);
   const { itemType, isDragging, item, initialOffset, currentOffset, delta } = useDragLayer((monitor) => ({
     item: monitor.getItem(),
     itemType: monitor.getItemType(),
@@ -88,7 +100,17 @@ export const SubCustomDragLayer = ({ parentRef, parent, currentLayout }) => {
   return (
     <div style={layerStyles} className="sub-custom-drag-layer">
       <div
-        style={getItemStyles(delta, item, initialOffset, currentOffset, parentRef, parent, currentLayout, canvasWidth)}
+        style={getItemStyles(
+          delta,
+          item,
+          initialOffset,
+          currentOffset,
+          parentRef,
+          parent,
+          currentLayout,
+          canvasWidth,
+          moduleName
+        )}
       >
         {renderItem()}
       </div>

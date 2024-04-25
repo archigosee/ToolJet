@@ -8,6 +8,7 @@ import { EditorContext } from './Context/EditorContextWrapper';
 import { validateWidget } from '@/_helpers/utils';
 import { useCurrentState } from '@/_stores/currentStateStore';
 import { useAppInfo } from '@/_stores/appDataStore';
+import { ModuleContext } from '../_contexts/ModuleContext';
 
 const shouldAddBoxShadowAndVisibility = ['TextInput', 'PasswordInput', 'NumberInput', 'Text'];
 
@@ -46,6 +47,7 @@ const BoxUI = (props) => {
   const darkMode = localStorage.getItem('darkMode') === 'true';
 
   const { variablesExposedForPreview, exposeToCodeHinter } = useContext(EditorContext) || {};
+  const moduleName = useContext(ModuleContext);
 
   const currentState = useCurrentState();
 
@@ -147,7 +149,7 @@ const BoxUI = (props) => {
             if (isFromSubContainer) {
               onOptionsChanged(component, Object.entries(variableSet), id);
             } else {
-              onComponentOptionsChanged(component, Object.entries(variableSet), id);
+              onComponentOptionsChanged(moduleName, component, Object.entries(variableSet), id);
             }
           }}
           height={height}

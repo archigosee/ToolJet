@@ -1,5 +1,5 @@
 /* eslint-disable import/no-named-as-default */
-import React, { useCallback, useState, useEffect, useRef, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useRef, useMemo, useContext } from 'react';
 import cx from 'classnames';
 import { useDrop, useDragLayer } from 'react-dnd';
 import { ItemTypes, EditorConstants } from './editorConstants';
@@ -15,15 +15,16 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import { addComponents, addNewWidgetToTheEditor, isPDFSupported } from '@/_helpers/appUtils';
 import { useAppVersionStore } from '@/_stores/appVersionStore';
 import { useEditorStore } from '@/_stores/editorStore';
+import { useSuperStore } from '@/_stores/superStore';
 import { useAppInfo } from '@/_stores/appDataStore';
 import { shallow } from 'zustand/shallow';
 import _, { cloneDeep, isEmpty } from 'lodash';
+import { ModuleContext } from '../_contexts/ModuleContext';
 // eslint-disable-next-line import/no-unresolved
 import { diff } from 'deep-object-diff';
 import DragContainer from './DragContainer';
 import { compact, correctBounds } from './gridUtils';
 import toast from 'react-hot-toast';
-import { isOnlyLayoutUpdate, handleLowPriorityWork } from '@/_helpers/editorHelpers';
 import GhostWidget from './GhostWidget';
 import { useDraggedSubContainer, useGridStore } from '@/_stores/gridStore';
 
@@ -45,8 +46,9 @@ export const Container = ({
   handleUndo,
   handleRedo,
 }) => {
-  const currentPageId = useEditorStore.getState().currentPageId;
-  const appDefinition = useEditorStore.getState().appDefinition;
+  const moduleName = useContext(ModuleContext);
+  const currentPageId = useSuperStore.getState().modules[moduleName].useEditorStore.getState().currentPageId;
+  const appDefinition = useSuperStore.getState().modules[moduleName].useEditorStore.getState().appDefinition;
   // Dont update first time to skip
   // redundant save on app definition load
   const firstUpdate = useRef(true);
@@ -366,7 +368,8 @@ export const Container = ({
           canvasBoundingRect,
           item.currentLayout,
           snapToGrid,
-          zoomLevel
+          zoomLevel,
+          moduleName
         );
 
         // Logic to add default child components
@@ -429,7 +432,8 @@ export const Container = ({
               snapToGrid,
               zoomLevel,
               true,
-              true
+              true,
+              moduleName
             );
 
             _.set(childrenBoxes, newChildComponent.id, {

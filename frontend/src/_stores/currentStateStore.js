@@ -3,61 +3,59 @@ import { create, zustandDevTools } from './utils';
 import _, { omit } from 'lodash';
 import { useResolveStore } from './resolverStore';
 import { handleLowPriorityWork } from '@/_helpers/editorHelpers';
+import { useContext } from 'react';
+import { useSuperStore } from './superStore';
+import { ModuleContext } from '../_contexts/ModuleContext';
 
-const initialState = {
-  queries: {},
-  components: {},
-  globals: {
-    theme: { name: 'light' },
-    urlparams: null,
-  },
-  errors: {},
-  variables: {},
-  client: {},
-  server: {},
-  page: {
-    handle: '',
+export function createCurrentStateStore(moduleName) {
+  const initialState = {
+    queries: {},
+    components: {},
+    globals: {
+      theme: { name: 'light' },
+      urlparams: null,
+    },
+    errors: {},
     variables: {},
-  },
-  succededQuery: {},
-  isEditorReady: false,
-};
+    client: {},
+    server: {},
+    page: {
+      handle: '',
+      variables: {},
+    },
+    succededQuery: {},
+    moduleName,
+    isEditorReady: false,
+  };
 
-function generatePath(obj, targetKey, currentPath = '') {
-  for (const key in obj) {
-    const newPath = currentPath ? currentPath + '.' + key : key;
-
-    if (key === targetKey) {
-      return newPath;
-    }
-
-    if (typeof obj[key] === 'object' && obj[key] !== null) {
-      const result = generatePath(obj[key], targetKey, newPath);
-      if (result) {
-        return result;
-      }
-    }
-  }
-  return null;
+  return create(
+    zustandDevTools(
+      (set, get) => ({
+        ...initialState,
+        actions: {
+          setCurrentState: (currentState) => {
+            set({ ...currentState }, false, { type: 'SET_CURRENT_STATE', currentState });
+          },
+          setErrors: (error) => {
+            set({ errors: { ...get().errors, ...error } }, false, { type: 'SET_ERRORS', error });
+          },
+          setEditorReady: (isEditorReady) => set({ isEditorReady }),
+        },
+      }),
+      { name: 'Current State' }
+    )
+  );
 }
 
-export const useCurrentStateStore = create(
-  zustandDevTools(
-    (set, get) => ({
-      ...initialState,
-      actions: {
-        setCurrentState: (currentState) => {
-          set({ ...currentState }, false, { type: 'SET_CURRENT_STATE', currentState });
-        },
-        setErrors: (error) => {
-          set({ errors: { ...get().errors, ...error } }, false, { type: 'SET_ERRORS', error });
-        },
-        setEditorReady: (isEditorReady) => set({ isEditorReady }),
-      },
-    }),
-    { name: 'Current State' }
-  )
-);
+export const useCurrentStateStore = (callback, shallow) => {
+  const moduleName = useContext(ModuleContext);
+
+  if (!moduleName) throw Error('module context not available');
+
+  const _useCurrentStateStore = useSuperStore((state) => state.modules[moduleName].useCurrentStateStore);
+
+  return _useCurrentStateStore(callback, shallow);
+};
 
 export const useCurrentState = () =>
   // Omitting 'actions' here because we don't want to expose it to user
@@ -78,18 +76,19 @@ export const useCurrentState = () =>
   }, shallow);
 
 useCurrentStateStore.subscribe((state) => {
+  const moduleName = useContext(ModuleContext);
   const isEditorReady = state.isEditorReady;
 
   if (!isEditorReady) return;
 
-  const isStoreIntialized = useResolveStore.getState().storeReady;
+  const isStoreIntialized = useSuperStore.getState().modules[moduleName].useResolveStore.getState().storeReady;
 
   if (!isStoreIntialized) {
-    const isPageSwitched = useResolveStore.getState().isPageSwitched;
+    const isPageSwitched = useSuperStore.getState().modules[moduleName].useResolveStore.getState().isPageSwitched;
 
     handleLowPriorityWork(
       () => {
-        useResolveStore.getState().actions.updateAppSuggestions({
+        useSuperStore.getState().modules[moduleName].useResolveStore.getState().actions.updateAppSuggestions({
           queries: state.queries,
           components: state.components,
           globals: state.globals,
@@ -99,16 +98,19 @@ useCurrentStateStore.subscribe((state) => {
           server: state.server,
           constants: state.constants,
         });
-        useResolveStore.getState().actions.pageSwitched(false);
+        useSuperStore.getState().modules[moduleName].useResolveStore.getState().actions.pageSwitched(false);
       },
       null,
       isPageSwitched
     );
 
-    return useResolveStore.getState().actions.updateStoreState({ storeReady: true });
+    return useSuperStore
+      .getState()
+      .modules[moduleName].useResolveStore.getState()
+      .actions.updateStoreState({ storeReady: true });
   }
 }, shallow);
 
-export const getCurrentState = () => {
-  return omit(useCurrentStateStore.getState(), 'actions');
+export const getCurrentState = (moduleName) => {
+  return omit(useSuperStore.getState().modules[moduleName].getState(), 'actions');
 };
