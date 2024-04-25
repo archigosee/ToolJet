@@ -1,7 +1,7 @@
 import React from 'react';
 import { resolveReferences } from '@/_helpers/utils';
 import { useTranslation } from 'react-i18next';
-import { CodeHinter } from '@/Editor/CodeBuilder/CodeHinter';
+import CodeHinter from '@/Editor/CodeEditor';
 import { EventManager } from '../../../EventManager';
 import { ProgramaticallyHandleProperties } from '../ProgramaticallyHandleProperties';
 import { OptionsList } from '../SelectOptionsList/OptionsList';
